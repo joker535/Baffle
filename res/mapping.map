@@ -1,0 +1,15 @@
+#mapping 文件，同样这个开头的是注释：）
+
+#key 段的mapping
+----map_key
+
+activity_login_rb_admin,b444444
+imexaple,a
+icon,b
+activity_myinformation_tv_sex,a799999
+
+
+
+----map_key
+
+#大概就是这个样子，暂时不支持include之类的操作。和keep规则冲突以mapping为准
