@@ -33,3 +33,5 @@ activity_myinformation,ae
 ----map_key
 \#大概就是这个样子，暂时不支持include之类的操作。和keep规则冲突以mapping为准
 </pre></code>
+
+具体原理可以参见我的博客：[Android apk文件资源混淆原理及实现](http://blog.csdn.net/joker535/article/details/48315257)
