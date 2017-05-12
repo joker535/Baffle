@@ -119,7 +119,7 @@ public class BaffleTask extends Task {
 			mappingfile = null;
 		}
 
-		Obfuscater obfuscater = new Obfuscater(mConfigFiles, mappingfile,
+		Obfuscater obfuscater = new Obfuscater(mConfigFiles, mappingfile,null,
 				mApkFile, mTargetFilepath);
 
 		try {

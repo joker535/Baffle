@@ -31,16 +31,19 @@ import com.guye.baffle.obfuscate.Obfuscater;
 public class ZipInfo {
 	public String type;
 	public String name;
+	private String orginName;
 	public long size;
 	public int zipMethod;
 	public long crc;
 	private String postfix;
+	private String digest;
 
-	public ZipInfo(String name, int method, long l, long crc) {
+	public ZipInfo(String name, int method, long l, long crc,String digest) {
 		zipMethod = method;
 		this.size = l;
 		this.crc = crc;
-
+		this.setDigest(digest);
+		setOrginName(name);
 		if (name.startsWith(ObfuscateHelper.RES_PROFIX)) {
 			String[] names = name.split("/");
 			if (names == null || names.length != 3) {
@@ -73,4 +76,22 @@ public class ZipInfo {
 			return name;
 		}
 	}
+
+    public String getDigest() {
+        return digest;
+    }
+
+    public void setDigest( String digest ) {
+        this.digest = digest;
+    }
+
+    public String getOrginName() {
+        return orginName;
+    }
+
+    public void setOrginName( String orginName ) {
+        this.orginName = orginName;
+    }
+
+  
 }

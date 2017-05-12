@@ -2,6 +2,7 @@ package com.guye.baffle.webp;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -14,11 +15,20 @@ import javax.imageio.stream.FileImageOutputStream;
 import com.luciad.imageio.webp.WebPWriteParam;
 
 public class WebpIO {
-	public static boolean toWebp(File in , File out) throws IOException{
+	public static boolean toWebp(File in , File out) {
 		long orgSize = in.length();
 		BufferedImage image;
-		image = ImageIO.read(in);
+		try{
+		    image = ImageIO.read(in);
+		}catch(Exception e){
+		    e.printStackTrace();
+		    return false;
+		}
 		
+		if(image == null){
+		    System.out.println(in.getAbsolutePath());
+		    return false;
+		}
 		ImageWriter w = null;
 		ImageTypeSpecifier type =
 	            ImageTypeSpecifier.createFromRenderedImage(image);
@@ -39,23 +49,34 @@ public class WebpIO {
 		WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
 		writeParam.setCompressionMode(WebPWriteParam.LOSSY_COMPRESSION);
 		
+		
 
 		// Configure the output on the ImageWriter
-		writer.setOutput(new FileImageOutputStream(out));
+		try {
+            writer.setOutput(new FileImageOutputStream(out));
+            // Encode
+            writer.write(null, new IIOImage(image, null, null), writeParam);
+        } catch (FileNotFoundException e) {
+            
+            e.printStackTrace();
+            return false;
+        } catch (IOException e) {
+            
+            e.printStackTrace();
+            return false;
+        }
 
-		// Encode
-		writer.write(null, new IIOImage(image, null, null), writeParam);
+
 		
 	
 		long newSize = out.length();
 		if(orgSize > newSize){
-//			in.delete();
-//			return true;
+			in.delete();
+			return true;
 		}else{
 			out.delete();
 			return false;
 		}
-		return true;
 		
 		
 	}

@@ -154,4 +154,20 @@ public class OS {
 		private final InputStream mIn;
 		private final OutputStream mOut;
 	}
+	public static void main( String[] args ) {
+	    byte[] buff = new byte[]{0x3f, (byte) 0xf3 ,(byte) 0xbb ,0x53 ,(byte) 0x93 ,0x25, 0x0b, 0x52};
+        
+        long addr = buff[0] & 0xFF;  
+        addr = (addr << 8) | (buff[1] & 0xff) ;  
+        addr = (addr << 8) | (buff[2] & 0xff) ;  
+        addr = (addr << 8) | (buff[3] & 0xff) ;
+        addr = (addr << 8) | (buff[4] & 0xff) ;
+        addr = (addr << 8) | (buff[5] & 0xff) ;
+        addr = (addr << 8) | (buff[6] & 0xff) ;
+        addr = (addr << 8) | (buff[7] & 0xff) ;
+                
+       System.out.printf("%x" , addr);
+       System.out.println();
+        System.out.println(Double.longBitsToDouble(addr));
+    }
 }

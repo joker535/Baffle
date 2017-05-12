@@ -25,8 +25,16 @@ package com.guye.baffle.obfuscate;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.CRC32;
@@ -64,13 +72,17 @@ public class Obfuscater {
 
 	private File mMappingFile;
 
-	private Logger log = Logger.getLogger(LOG_NAME);
+    private File mRepeatFile;
 	
-	public Obfuscater(File[] configs, File mappingFile, File apkFile,
+	private Logger log = Logger.getLogger(LOG_NAME);
+
+	
+	public Obfuscater(File[] configs, File mappingFile, File repeatFile, File apkFile,
 			String target) {
 		mConfigFiles = configs;
 		mApkFile = apkFile;
 		mTarget = target;
+		mRepeatFile = repeatFile;
 		mMappingFile = mappingFile;
 	}
 
@@ -154,7 +166,59 @@ public class Obfuscater {
 
 		// unzip apk or ap_ file
 		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir);
+		
+		if(mRepeatFile != null){
+		    PrintStream printStream = new PrintStream(mRepeatFile);
+		    List<ZipInfo> sortedZipinfo = new ArrayList<ZipInfo>(zipinfos.size());
+	        sortedZipinfo.addAll(zipinfos);
 
+	        Collections.sort(sortedZipinfo, new Comparator<ZipInfo>() {
+
+	            @Override
+	            public int compare( ZipInfo o1, ZipInfo o2 ) {
+	                return o1.getDigest().compareTo(o2.getDigest());
+	            }
+	        });
+	        
+	        int size = zipinfos.size();
+	        int index = 0 ;
+	        ZipInfo info = null;
+	        info = sortedZipinfo.get(index);
+	        Map<String, List<ZipInfo>> map = new HashMap<String, List<ZipInfo>>();
+	        while(index < size-1){
+	            if(info.getDigest().equals(sortedZipinfo.get(index+1).getDigest())){
+	                List<ZipInfo> infos = map.get(info.getDigest());
+	                if(infos == null){
+	                    infos = new ArrayList<ZipInfo>();
+	                    map.put(info.getDigest(), infos);
+	                    infos.add(info);
+	                }
+	                infos.add(sortedZipinfo.get(index+1));
+	                index+=1;
+	                if(index >= size){
+	                    break;
+	                }
+	                info = sortedZipinfo.get(index);
+	            }else{
+	                index+=1;
+	                if(index >= size){
+	                    break;
+	                }
+	                info = sortedZipinfo.get(index);
+	            }
+	        }
+	        Set<Entry<String, List<ZipInfo>>> entries = map.entrySet();
+	        for (Entry<String, List<ZipInfo>> entry : entries) {
+	            printStream.println("md5:" +entry.getKey());
+	            for (ZipInfo z : entry.getValue()) {
+	                printStream.println("\t" +z.getOrginName());
+	            }
+	            printStream.println("----------");
+	        }
+	        
+	        printStream.close();
+		}
+		
 		// decode arsc file
 		mArscData = ArscData.decode(new File(tempDir + "resources.arsc"));
 
@@ -180,7 +244,7 @@ public class Obfuscater {
 		mZipinfos = zipinfos;
 
 		ZipInfo arscInfo = new ZipInfo("resources.arsc", ZipEntry.STORED,
-				arscFile.length(), arscCrc.getValue());
+				arscFile.length(), arscCrc.getValue() , "");
 
 		try {
 			new ApkBuilder(mObfuscateHelper, mZipinfos, arscInfo).reBuildapk(

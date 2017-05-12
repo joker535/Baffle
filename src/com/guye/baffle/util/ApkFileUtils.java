@@ -27,52 +27,112 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class ApkFileUtils {
-	public static List<ZipInfo> unZipApk(File apkFile, String tempDir)
-			throws IOException {
-		ZipFile in = new ZipFile(apkFile);
-		File out = new File(tempDir);
-		File outFile;
-		BufferedOutputStream bos;
-		InputStream input;
-		int length = -1;
-		byte[] buffer = new byte[8192];
-		Enumeration<? extends ZipEntry> entries = in.entries();
-		List<ZipInfo> zipInfos = new ArrayList<ZipInfo>(100);
-		ZipInfo info;
-		while (entries.hasMoreElements()) {
-			ZipEntry entry = entries.nextElement();
+import com.guye.baffle.decoder.MakeCsc;
+import com.guye.baffle.webp.WebpIO;
 
-			if (entry.isDirectory() || entry.getName().startsWith("META-INF")) {
-				continue;
-			}
-			outFile = new File(out, entry.getName());
-			if (!outFile.getParentFile().exists()) {
-				outFile.getParentFile().mkdirs();
-			}
-			bos = new BufferedOutputStream(new FileOutputStream(outFile));
-			input = in.getInputStream(entry);
-			while (true) {
-				length = input.read(buffer);
-				if (length == -1)
-					break;
-				bos.write(buffer, 0, length);
-			}
-			if (!entry.isDirectory()) {
-				info = new ZipInfo(entry.getName(), entry.getMethod(),
-						entry.getSize(), entry.getCrc());
-				zipInfos.add(info);
-			}
-			bos.close();
-			input.close();
-		}
-		in.close();
-		return zipInfos;
-	}
+public class ApkFileUtils {
+    public static List<ZipInfo> unZipApk( File apkFile, String tempDir ) throws IOException {
+        ZipFile in = new ZipFile(apkFile);
+        File out = new File(tempDir);
+        File outFile;
+        BufferedOutputStream bos;
+        InputStream input;
+        int length = -1;
+        byte[] buffer = new byte[8192];
+        Enumeration<? extends ZipEntry> entries = in.entries();
+        List<ZipInfo> zipInfos = new ArrayList<ZipInfo>(100);
+        ZipInfo info;
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+
+            if (entry.isDirectory() || entry.getName().startsWith("META-INF")) {
+                continue;
+            }
+            outFile = new File(out, entry.getName());
+            if (!outFile.getParentFile().exists()) {
+                outFile.getParentFile().mkdirs();
+            }
+            bos = new BufferedOutputStream(new FileOutputStream(outFile));
+            MessageDigest md5 = null;
+            try {
+                md5 = MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+                // do nothing
+            }
+            DigestOutputStream digestOutputStream = new DigestOutputStream(bos, md5);
+            input = in.getInputStream(entry);
+            while (true) {
+                length = input.read(buffer);
+                if (length == -1)
+                    break;
+                digestOutputStream.write(buffer, 0, length);
+            }
+            digestOutputStream.close();
+            input.close();
+            if (!entry.isDirectory()) {
+                if((entry.getName().startsWith("res/")) &&  ((entry.getName().endsWith(".png") && !entry.getName().endsWith(".9.png")) || entry.getName().endsWith(".jpg") || entry.getName().endsWith(".jpeg"))){
+                    File newOutfile = new File(outFile.getParentFile() , getName(outFile.getName()));
+                    boolean hasChange = WebpIO.toWebp(outFile, newOutfile);
+                    if(hasChange){
+                        long crc = 0;
+                        try {
+                            crc = MakeCsc.getFileCRCCode(newOutfile);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        info = new ZipInfo(entry.getName(), entry.getMethod(), newOutfile.length(),
+                                crc, toHex(md5.digest()));
+                    }else{
+                        info = new ZipInfo(entry.getName(), entry.getMethod(), entry.getSize(),
+                                entry.getCrc(), toHex(md5.digest()));
+                    }
+                }else{
+                    info = new ZipInfo(entry.getName(), entry.getMethod(), entry.getSize(),
+                            entry.getCrc(), toHex(md5.digest()));
+                }
+                
+                zipInfos.add(info);
+            }
+        }
+        in.close();
+        return zipInfos;
+    }
+
+    private static String getName( String name ) {
+        name = name.substring(0,name.indexOf('.'));
+        return name+".webp";
+    }
+
+    /**
+     * md5 摘要转16进制
+     * 
+     * @param digest
+     * @return
+     */
+    private static String toHex( byte[] digest ) {
+        StringBuilder sb = new StringBuilder();
+        int len = digest.length;
+
+        String out = null;
+        for (int i = 0; i < len; i++) {
+            // out = Integer.toHexString(0xFF & digest[i] + 0xABCDEF); //加任意
+            // salt
+            out = Integer.toHexString(0xFF & digest[i]);// 原始方法
+            if (out.length() == 1) {
+                sb.append("0");// 如果为1位 前面补个0
+            }
+            sb.append(out);
+        }
+        return sb.toString();
+    }
 }

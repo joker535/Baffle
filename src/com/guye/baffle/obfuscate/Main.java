@@ -42,6 +42,8 @@ public class Main {
 		Options opt = new Options();
 
 		opt.addOption("c", "config", true, "config file path,keep or mapping");
+		
+		opt.addOption("r", "repeat", true, "output of repeat file check result");
 
 		opt.addOption("o", "output", true, "output mapping writer file");
 
@@ -52,8 +54,10 @@ public class Main {
 		opt.getOption("c").setArgName("file list");
 
 		opt.getOption("o").setArgName("file path");
+		
+		opt.getOption("r").setArgName("file path");
 
-		String formatstr = "baffle [-c/--config filepaths list ][-o/--output filepath][-h/--help] ApkFile TargetApkFile";
+		String formatstr = "baffle [-c/--config filepaths list ][-o/--output filepath][-r/--repeat filepath][-h/--help] ApkFile TargetApkFile";
 
 		HelpFormatter formatter = new HelpFormatter();
 		CommandLineParser parser = new PosixParser();
@@ -127,6 +131,17 @@ public class Main {
             }
 
         }
+        
+        File repeatfile = null;
+        if (cl.hasOption("r")) {
+            String mfile = cl.getOptionValue("r");
+            repeatfile = new File(mfile);
+
+            if (repeatfile.getParentFile() != null) {
+                repeatfile.getParentFile().mkdirs();
+            }
+
+        }
 		
 		if(cl.hasOption('v')){
 		    Logger.getLogger(Obfuscater.LOG_NAME).setLevel(Level.CONFIG);
@@ -136,7 +151,7 @@ public class Main {
 		
 		Logger.getLogger(Obfuscater.LOG_NAME).addHandler(new ConsoleHandler());
 		
-		Obfuscater obfuscater = new Obfuscater(configs, mappingfile, apkFile,
+		Obfuscater obfuscater = new Obfuscater(configs, mappingfile, repeatfile , apkFile,
 				str[1]);
 
 		obfuscater.obfuscate();
