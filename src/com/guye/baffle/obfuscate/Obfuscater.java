@@ -75,6 +75,8 @@ public class Obfuscater {
     private File mRepeatFile;
 	
 	private Logger log = Logger.getLogger(LOG_NAME);
+	
+	private Map<String, String> mWebpMapping = new HashMap<>(1000);
 
 	
 	public Obfuscater(File[] configs, File mappingFile, File repeatFile, File apkFile,
@@ -163,9 +165,9 @@ public class Obfuscater {
 		mBaffleConfig = new ConfigReader().read(mConfigFiles);
 
 		mObfuscateHelper = new ObfuscateHelper(mBaffleConfig);
-
+		
 		// unzip apk or ap_ file
-		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir);
+		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir , mWebpMapping);
 		
 		if(mRepeatFile != null){
 		    PrintStream printStream = new PrintStream(mRepeatFile);
@@ -224,7 +226,9 @@ public class Obfuscater {
 
 		// do obfuscate
 		mObfuscateHelper.obfuscate(mArscData);
-
+		
+		mObfuscateHelper.setWebpMapping(mWebpMapping);
+		
 		// write mapping file
 		if (mMappingFile != null) {
 			mMappingWrite = new MappingWriter(

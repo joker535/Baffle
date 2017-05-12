@@ -217,4 +217,14 @@ public class ArscData {
         return cksum;
     }
   
+    public static void main(String[] args) throws IOException {
+		ArscData arscData = ArscData.decode(new File("/Users/nieyu/tempfile/resources.arsc"));
+		int size = arscData.mSpecNames.getCount();
+		for (int i = 0; i < size; i++) {
+			if(arscData.mSpecNames.getString(i).contains("png")){
+				System.out.println(arscData.mSpecNames.getString(i));
+			}
+		}
+	}
+    
 }

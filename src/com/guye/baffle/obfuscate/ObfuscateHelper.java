@@ -45,13 +45,13 @@ public class ObfuscateHelper {
 	public static final String RES_KEY = "res";
 	private static final String RES_KEY_KEY = "key_";
 
-	private static final String DEFAULT_RES_KEY = "r";
+	private static final String DEFAULT_RES_KEY = "res";
 
 	private Logger log = Logger.getLogger(Obfuscater.LOG_NAME);
 	
 	private Map<String, String> mTypeMaping = new HashMap<String, String>(16);
 	private Map<String, String> mKeyMaping = new HashMap<String, String>(100);
-
+	private Map<String, String> mWebpMapping;
 	private BaffleConfig baffleConfig;
 	private NameFactory factory;
 
@@ -159,6 +159,10 @@ public class ObfuscateHelper {
 
 	String getNewTableString(String orgString) {
 		if (orgString.startsWith(RES_PROFIX)) {
+			String webpOrgString = mWebpMapping.get(orgString);
+			if(webpOrgString != null){
+				orgString = webpOrgString;
+			}
 			String[] names = orgString.split("/");
 			if (names == null || names.length != 3) {
 				throw new RuntimeException(); // TODO
@@ -182,6 +186,7 @@ public class ObfuscateHelper {
 			String newString = new StringBuilder().append(newNames[0])
 					.append('/').append(newNames[1]).append('/')
 					.append(newNames[2]).append(postfix).toString();
+			System.out.println(newString);
 			return newString;
 		} else {
 			return orgString;
@@ -210,5 +215,10 @@ public class ObfuscateHelper {
 		public String resName;
 		public Map<String, String> typeMaping;
 		public Map<String, String> keyMaping;
+	}
+
+	public void setWebpMapping(Map<String, String> map) {
+		this.mWebpMapping = map;
+		
 	}
 }
