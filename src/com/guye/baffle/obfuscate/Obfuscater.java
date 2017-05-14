@@ -53,7 +53,7 @@ import com.guye.baffle.util.ZipInfo;
 
 public class Obfuscater {
 
-    public static final String LOG_NAME = "BAFFLE";
+	public static final String LOG_NAME = "BAFFLE";
 	private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
 
 	private List<ZipInfo> mZipinfos;
@@ -72,15 +72,13 @@ public class Obfuscater {
 
 	private File mMappingFile;
 
-    private File mRepeatFile;
-	
+	private File mRepeatFile;
+
 	private Logger log = Logger.getLogger(LOG_NAME);
-	
+
 	private Map<String, String> mWebpMapping = new HashMap<>(1000);
 
-	
-	public Obfuscater(File[] configs, File mappingFile, File repeatFile, File apkFile,
-			String target) {
+	public Obfuscater(File[] configs, File mappingFile, File repeatFile, File apkFile, String target) {
 		mConfigFiles = configs;
 		mApkFile = apkFile;
 		mTarget = target;
@@ -88,12 +86,10 @@ public class Obfuscater {
 		mMappingFile = mappingFile;
 	}
 
-	private StringBlock createStrings(StringBlock orgTableStrings,
-			boolean isTableString) {
+	private StringBlock createStrings(StringBlock orgTableStrings, boolean isTableString) {
 		try {
 			ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
-			LEDataOutputStream dataOutputStream = new LEDataOutputStream(
-					arrayOutputStream);
+			LEDataOutputStream dataOutputStream = new LEDataOutputStream(arrayOutputStream);
 			int count = orgTableStrings.getCount();
 			int curOffset = 0;
 			int[] offset = new int[count];
@@ -105,11 +101,9 @@ public class Obfuscater {
 			int offsetDataLen = 1;
 			for (int i = 0; i < count; i++) {
 				if (isTableString) {
-					newStr = mObfuscateHelper.getNewTableString(orgTableStrings
-							.getString(i));
+					newStr = mObfuscateHelper.getNewTableString(orgTableStrings.getString(i));
 				} else {
-					newStr = mObfuscateHelper.getNewKeyString(orgTableStrings
-							.getString(i));
+					newStr = mObfuscateHelper.getNewKeyString(orgTableStrings.getString(i));
 				}
 				strData = newStr.getBytes(UTF_8_CHARSET);
 				offset[i] = curOffset;
@@ -143,9 +137,7 @@ public class Obfuscater {
 			dataOutputStream.close();
 			arrayOutputStream.close();
 
-			return new StringBlock(offset, strData,
-					orgTableStrings.getStyleOffset(),
-					orgTableStrings.getStyle(), true);
+			return new StringBlock(offset, strData, orgTableStrings.getStyleOffset(), orgTableStrings.getStyle(), true);
 		} catch (IOException e) {// not a disk IO option
 			e.printStackTrace();
 		}
@@ -154,9 +146,8 @@ public class Obfuscater {
 
 	public void obfuscate() throws IOException, BaffleException {
 
-		String tempDir = System.getProperty("java.io.tmpdir") + File.separator
-				+ "old" + File.separator;
-		log.log(Level.CONFIG,"tempDir:::" + tempDir);
+		String tempDir = System.getProperty("java.io.tmpdir") + File.separator + "old" + File.separator;
+		log.log(Level.CONFIG, "tempDir:::" + tempDir);
 		File temp = new File(tempDir);
 		OS.rmdir(temp);
 		temp.mkdirs();
@@ -165,94 +156,118 @@ public class Obfuscater {
 		mBaffleConfig = new ConfigReader().read(mConfigFiles);
 
 		mObfuscateHelper = new ObfuscateHelper(mBaffleConfig);
-		
+
 		// unzip apk or ap_ file
-		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir , mWebpMapping);
-		
-		if(mRepeatFile != null){
-		    PrintStream printStream = new PrintStream(mRepeatFile);
-		    List<ZipInfo> sortedZipinfo = new ArrayList<ZipInfo>(zipinfos.size());
-	        sortedZipinfo.addAll(zipinfos);
+		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir, mWebpMapping);
 
-	        Collections.sort(sortedZipinfo, new Comparator<ZipInfo>() {
+		Map<String, String> changeEqualFile = new HashMap<>(100);
 
-	            @Override
-	            public int compare( ZipInfo o1, ZipInfo o2 ) {
-	                return o1.getDigest().compareTo(o2.getDigest());
-	            }
-	        });
-	        
-	        int size = zipinfos.size();
-	        int index = 0 ;
-	        ZipInfo info = null;
-	        info = sortedZipinfo.get(index);
-	        Map<String, List<ZipInfo>> map = new HashMap<String, List<ZipInfo>>();
-	        while(index < size-1){
-	            if(info.getDigest().equals(sortedZipinfo.get(index+1).getDigest())){
-	                List<ZipInfo> infos = map.get(info.getDigest());
-	                if(infos == null){
-	                    infos = new ArrayList<ZipInfo>();
-	                    map.put(info.getDigest(), infos);
-	                    infos.add(info);
-	                }
-	                infos.add(sortedZipinfo.get(index+1));
-	                index+=1;
-	                if(index >= size){
-	                    break;
-	                }
-	                info = sortedZipinfo.get(index);
-	            }else{
-	                index+=1;
-	                if(index >= size){
-	                    break;
-	                }
-	                info = sortedZipinfo.get(index);
-	            }
-	        }
-	        Set<Entry<String, List<ZipInfo>>> entries = map.entrySet();
-	        for (Entry<String, List<ZipInfo>> entry : entries) {
-	            printStream.println("md5:" +entry.getKey());
-	            for (ZipInfo z : entry.getValue()) {
-	                printStream.println("\t" +z.getOrginName());
-	            }
-	            printStream.println("----------");
-	        }
-	        
-	        printStream.close();
+		PrintStream printStream = null;
+		if (mRepeatFile != null) {
+			printStream = new PrintStream(mRepeatFile);
+		}
+		List<ZipInfo> sortedZipinfo = new ArrayList<ZipInfo>(zipinfos.size());
+		sortedZipinfo.addAll(zipinfos);
+
+		Collections.sort(sortedZipinfo, new Comparator<ZipInfo>() {
+
+			@Override
+			public int compare(ZipInfo o1, ZipInfo o2) {
+				return o1.getDigest().compareTo(o2.getDigest());
+			}
+		});
+
+		int size = zipinfos.size();
+		int index = 0;
+		ZipInfo info = null;
+		info = sortedZipinfo.get(index);
+		Map<String, List<ZipInfo>> map = new HashMap<String, List<ZipInfo>>();
+		while (index < size - 1) {
+			if (info.getDigest().equals(sortedZipinfo.get(index + 1).getDigest())) {
+				List<ZipInfo> infos = map.get(info.getDigest());
+				if (infos == null) {
+					infos = new ArrayList<ZipInfo>();
+					map.put(info.getDigest(), infos);
+					infos.add(info);
+				}
+				infos.add(sortedZipinfo.get(index + 1));
+				index += 1;
+				if (index >= size) {
+					break;
+				}
+				info = sortedZipinfo.get(index);
+			} else {
+				index += 1;
+				if (index >= size) {
+					break;
+				}
+				info = sortedZipinfo.get(index);
+			}
+		}
+		Set<Entry<String, List<ZipInfo>>> entries = map.entrySet();
+		for (Entry<String, List<ZipInfo>> entry : entries) {
+			if (mRepeatFile != null) {
+				printStream.println("md5:" + entry.getKey());
+			}
+			String firstFile = null;
+			for (ZipInfo z : entry.getValue()) {
+				if(!z.getOrginName().startsWith("res/")){
+					continue;
+				}
+				if (firstFile == null) {
+					firstFile = z.getOrginName();
+				}else{
+					File dFile = new File(temp,z.getOrginName());
+					dFile.delete();
+					System.out.println(z.getOrginName());
+					zipinfos.remove(z);
+				}
+				
+				changeEqualFile.put(z.getOrginName(), firstFile);	
+				
+				if (mRepeatFile != null) {
+					printStream.println("\t" + z.getOrginName());
+				}
+			}
+			if (mRepeatFile != null) {
+				printStream.println("----------");
+			}
+		}
+		if (mRepeatFile != null) {
+			printStream.close();
 		}
 		
+		mObfuscateHelper.setChangeEqualMapping(changeEqualFile);
+
 		// decode arsc file
 		mArscData = ArscData.decode(new File(tempDir + "resources.arsc"));
 
 		// do obfuscate
 		mObfuscateHelper.obfuscate(mArscData);
-		
+
 		mObfuscateHelper.setWebpMapping(mWebpMapping);
-		
+
 		// write mapping file
-		if (mMappingFile != null) {
-			mMappingWrite = new MappingWriter(
-					mObfuscateHelper.getObfuscateData().keyMaping);
+		if (mMappingFile != null)
+
+		{
+			mMappingWrite = new MappingWriter(mObfuscateHelper.getObfuscateData().keyMaping);
 			mMappingWrite.WriteToFile(mMappingFile);
 		} else {
-		    log.log(Level.CONFIG , "not specific mapping file");
+			log.log(Level.CONFIG, "not specific mapping file");
 		}
 
-		StringBlock tableBlock = createStrings(mArscData.getmTableStrings(),
-				true);
+		StringBlock tableBlock = createStrings(mArscData.getmTableStrings(), true);
 		StringBlock keyBlock = createStrings(mArscData.getmSpecNames(), false);
 		File arscFile = new File(tempDir + "resources.n.arsc");
-		CRC32 arscCrc = mArscData.createObfuscateFile(tableBlock, keyBlock,
-				arscFile);
+		CRC32 arscCrc = mArscData.createObfuscateFile(tableBlock, keyBlock, arscFile);
 
 		mZipinfos = zipinfos;
 
-		ZipInfo arscInfo = new ZipInfo("resources.arsc", ZipEntry.STORED,
-				arscFile.length(), arscCrc.getValue() , "");
+		ZipInfo arscInfo = new ZipInfo("resources.arsc", ZipEntry.STORED, arscFile.length(), arscCrc.getValue(), "");
 
 		try {
-			new ApkBuilder(mObfuscateHelper, mZipinfos, arscInfo).reBuildapk(
-					mTarget, tempDir);
+			new ApkBuilder(mObfuscateHelper, mZipinfos, arscInfo).reBuildapk(mTarget, tempDir);
 		} catch (IOException e) {
 			OS.rmfile(mTarget);
 			throw e;

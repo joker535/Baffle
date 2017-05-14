@@ -52,6 +52,7 @@ public class ObfuscateHelper {
 	private Map<String, String> mTypeMaping = new HashMap<String, String>(16);
 	private Map<String, String> mKeyMaping = new HashMap<String, String>(100);
 	private Map<String, String> mWebpMapping;
+	private Map<String, String> mChangeEuqalMapping;
 	private BaffleConfig baffleConfig;
 	private NameFactory factory;
 
@@ -163,6 +164,10 @@ public class ObfuscateHelper {
 			if(webpOrgString != null){
 				orgString = webpOrgString;
 			}
+			String changeFile = mChangeEuqalMapping==null?null:mChangeEuqalMapping.get(orgString);
+			if(changeFile != null){
+				orgString = changeFile;
+			}
 			String[] names = orgString.split("/");
 			if (names == null || names.length != 3) {
 				throw new RuntimeException(); // TODO
@@ -186,7 +191,6 @@ public class ObfuscateHelper {
 			String newString = new StringBuilder().append(newNames[0])
 					.append('/').append(newNames[1]).append('/')
 					.append(newNames[2]).append(postfix).toString();
-			System.out.println(newString);
 			return newString;
 		} else {
 			return orgString;
@@ -219,6 +223,11 @@ public class ObfuscateHelper {
 
 	public void setWebpMapping(Map<String, String> map) {
 		this.mWebpMapping = map;
+		
+	}
+
+	public void setChangeEqualMapping(Map<String, String> changeEqualFile) {
+		mChangeEuqalMapping = changeEqualFile;
 		
 	}
 }

@@ -93,5 +93,30 @@ public class ZipInfo {
         this.orginName = orginName;
     }
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((orginName == null) ? 0 : orginName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ZipInfo other = (ZipInfo) obj;
+		if (orginName == null) {
+			if (other.orginName != null)
+				return false;
+		} else if (!orginName.equals(other.orginName))
+			return false;
+		return true;
+	}
+
   
 }
