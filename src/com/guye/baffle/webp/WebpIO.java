@@ -15,7 +15,10 @@ import javax.imageio.stream.FileImageOutputStream;
 import com.luciad.imageio.webp.WebPWriteParam;
 
 public class WebpIO {
-	public static boolean toWebp(File in , File out) {
+	public static boolean toWebp(File in , File out, int minilevel) {
+	    if(minilevel < 14){
+	        return false;
+	    }
 		long orgSize = in.length();
 		BufferedImage image;
 		try{
@@ -26,8 +29,13 @@ public class WebpIO {
 		}
 		
 		if(image == null){
-		    System.out.println(in.getAbsolutePath());
 		    return false;
+		}
+		
+		if(minilevel < 17){
+		    if(image.isAlphaPremultiplied()){
+		        return false;
+		    }
 		}
 		ImageWriter w = null;
 		ImageTypeSpecifier type =

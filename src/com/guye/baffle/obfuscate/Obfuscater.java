@@ -163,7 +163,7 @@ public class Obfuscater {
 		mObfuscateHelper = new ObfuscateHelper(mBaffleConfig);
 
 		// unzip apk or ap_ file
-		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir, toWebp ,mWebpMapping);
+		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir, toWebp ,mWebpMapping,minLevelInt);
 
 		if(removeSameFile){
 		    removeEqualFile(temp, zipinfos);
