@@ -72,7 +72,11 @@ public class ObfuscateHelper {
 	}
 
 	public String createTypeName(String type) {
-		return factory.createName(RES_KEY);
+	    if (baffleConfig.isKeepKey(type)) {
+	        return type;
+	    }else{
+	        return factory.createName(RES_KEY);
+	    }
 	}
 
 	public String getResKey() {

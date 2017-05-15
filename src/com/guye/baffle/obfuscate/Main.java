@@ -47,6 +47,10 @@ public class Main {
 
 		opt.addOption("o", "output", true, "output mapping writer file");
 
+		opt.addOption("w", "towebp", true, "change image file to webp , param is your apk mini sdk level");
+		
+		opt.addOption("d", "delete", false, "delete same file in the apk");
+		
 		opt.addOption("v", "verbose", false, "explain what is being done.");
 
 		opt.addOption("h", "help", false, "print help for the command.");
@@ -153,7 +157,9 @@ public class Main {
 		
 		Obfuscater obfuscater = new Obfuscater(configs, mappingfile, repeatfile , apkFile,
 				str[1]);
-
+		
+		obfuscater.setWebpParam(cl.hasOption('w') , cl.getOptionValue('w'));
+		obfuscater.setRemoveSameFile(cl.hasOption('d'));
 		obfuscater.obfuscate();
 	}
 }

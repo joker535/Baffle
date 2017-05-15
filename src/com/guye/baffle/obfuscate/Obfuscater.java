@@ -24,6 +24,7 @@ package com.guye.baffle.obfuscate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
@@ -77,6 +78,10 @@ public class Obfuscater {
 	private Logger log = Logger.getLogger(LOG_NAME);
 
 	private Map<String, String> mWebpMapping = new HashMap<>(1000);
+    private boolean toWebp;
+    private int minLevelInt;
+    private boolean hasOption;
+    private boolean removeSameFile;
 
 	public Obfuscater(File[] configs, File mappingFile, File repeatFile, File apkFile, String target) {
 		mConfigFiles = configs;
@@ -158,9 +163,52 @@ public class Obfuscater {
 		mObfuscateHelper = new ObfuscateHelper(mBaffleConfig);
 
 		// unzip apk or ap_ file
-		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir, mWebpMapping);
+		List<ZipInfo> zipinfos = ApkFileUtils.unZipApk(mApkFile, tempDir, toWebp ,mWebpMapping);
 
-		Map<String, String> changeEqualFile = new HashMap<>(100);
+		if(removeSameFile){
+		    removeEqualFile(temp, zipinfos);
+		}
+		
+
+		// decode arsc file
+		mArscData = ArscData.decode(new File(tempDir + "resources.arsc"));
+
+		// do obfuscate
+		mObfuscateHelper.obfuscate(mArscData);
+
+		mObfuscateHelper.setWebpMapping(mWebpMapping);
+
+		// write mapping file
+		if (mMappingFile != null)
+
+		{
+			mMappingWrite = new MappingWriter(mObfuscateHelper.getObfuscateData().keyMaping);
+			mMappingWrite.WriteToFile(mMappingFile);
+		} else {
+			log.log(Level.CONFIG, "not specific mapping file");
+		}
+
+		StringBlock tableBlock = createStrings(mArscData.getmTableStrings(), true);
+		StringBlock keyBlock = createStrings(mArscData.getmSpecNames(), false);
+		File arscFile = new File(tempDir + "resources.n.arsc");
+		CRC32 arscCrc = mArscData.createObfuscateFile(tableBlock, keyBlock, arscFile);
+
+		mZipinfos = zipinfos;
+
+		ZipInfo arscInfo = new ZipInfo("resources.arsc", ZipEntry.STORED, arscFile.length(), arscCrc.getValue(), "");
+
+		try {
+			new ApkBuilder(mObfuscateHelper, mZipinfos, arscInfo).reBuildapk(mTarget, tempDir);
+		} catch (IOException e) {
+			OS.rmfile(mTarget);
+			throw e;
+		}
+
+		OS.rmdir(temp);
+	}
+
+    private void removeEqualFile( File temp, List<ZipInfo> zipinfos ) throws FileNotFoundException {
+        Map<String, String> changeEqualFile = new HashMap<>(100);
 
 		PrintStream printStream = null;
 		if (mRepeatFile != null) {
@@ -238,42 +286,24 @@ public class Obfuscater {
 		}
 		
 		mObfuscateHelper.setChangeEqualMapping(changeEqualFile);
+    }
 
-		// decode arsc file
-		mArscData = ArscData.decode(new File(tempDir + "resources.arsc"));
+    public void setWebpParam( boolean webp, String minLevel ) {
+        this.toWebp = webp;
+        if(toWebp){
+            try{
+                minLevelInt = Integer.parseInt(minLevel);
+            }catch(Exception e){
+                throw new RuntimeException("can not parse webp mini sdk level");
+            }
+        }
+        
+    }
 
-		// do obfuscate
-		mObfuscateHelper.obfuscate(mArscData);
+    public void setRemoveSameFile( boolean removeSameFile ) {
+        this.removeSameFile = removeSameFile;
 
-		mObfuscateHelper.setWebpMapping(mWebpMapping);
 
-		// write mapping file
-		if (mMappingFile != null)
-
-		{
-			mMappingWrite = new MappingWriter(mObfuscateHelper.getObfuscateData().keyMaping);
-			mMappingWrite.WriteToFile(mMappingFile);
-		} else {
-			log.log(Level.CONFIG, "not specific mapping file");
-		}
-
-		StringBlock tableBlock = createStrings(mArscData.getmTableStrings(), true);
-		StringBlock keyBlock = createStrings(mArscData.getmSpecNames(), false);
-		File arscFile = new File(tempDir + "resources.n.arsc");
-		CRC32 arscCrc = mArscData.createObfuscateFile(tableBlock, keyBlock, arscFile);
-
-		mZipinfos = zipinfos;
-
-		ZipInfo arscInfo = new ZipInfo("resources.arsc", ZipEntry.STORED, arscFile.length(), arscCrc.getValue(), "");
-
-		try {
-			new ApkBuilder(mObfuscateHelper, mZipinfos, arscInfo).reBuildapk(mTarget, tempDir);
-		} catch (IOException e) {
-			OS.rmfile(mTarget);
-			throw e;
-		}
-
-		OS.rmdir(temp);
-	}
+    }
 
 }
