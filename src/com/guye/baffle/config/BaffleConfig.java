@@ -35,6 +35,8 @@ public class BaffleConfig {
 	private Map<String, String> mKeyMapping = new HashMap<String, String>();
 
 	private List<Object> mKeyKeeps = new ArrayList<Object>();
+	
+	private List<Object> mImageKeeps = new ArrayList<Object>();
 
 	BaffleConfig() {
 	}
@@ -70,9 +72,29 @@ public class BaffleConfig {
         }
         return false;
 	}
+	
+	public boolean isKeepImage(String image) {
+        for (Object object : mImageKeeps) {
+            if(object instanceof Pattern){
+                Pattern pattern = (Pattern) object;
+                if(pattern.matcher(image).matches()){
+                    return true;
+                }
+            }else{
+                if(image.equals(object)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
 	public void addKeep(Object keep) {
 		mKeyKeeps.add(keep);
+	}
+	
+	public void addKeepImage(Object keep){
+	    mImageKeeps.add(keep);
 	}
 
 	public void addMapping(String key, String map) {

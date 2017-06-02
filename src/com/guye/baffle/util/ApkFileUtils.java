@@ -37,11 +37,12 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.guye.baffle.config.BaffleConfig;
 import com.guye.baffle.decoder.MakeCsc;
 import com.guye.baffle.webp.WebpIO;
 
 public class ApkFileUtils {
-    public static List<ZipInfo> unZipApk( File apkFile, String tempDir, boolean toWebp , Map<String, String> webpMapping ,int minilevel) throws IOException {
+    public static List<ZipInfo> unZipApk( File apkFile, String tempDir, boolean toWebp , BaffleConfig baffleConfig , Map<String, String> webpMapping ,int minilevel) throws IOException {
         ZipFile in = new ZipFile(apkFile);
         File out = new File(tempDir);
         File outFile;
@@ -81,25 +82,32 @@ public class ApkFileUtils {
             digestOutputStream.close();
             input.close();
             if (!entry.isDirectory()) {
-                if(toWebp && (entry.getName().startsWith("res/")) &&  ((entry.getName().endsWith(".png") && !entry.getName().endsWith(".9.png")) || entry.getName().endsWith(".jpg") || entry.getName().endsWith(".jpeg"))){
-                    File newOutfile = new File(outFile.getParentFile() , getName(outFile.getName()));
-                    boolean hasChange = WebpIO.toWebp(outFile, newOutfile , minilevel);
-                    int index = entry.getName().indexOf('.');
-                    if(hasChange){
-                        long crc = 0;
-                        try {
-                            crc = MakeCsc.getFileCRCCode(newOutfile);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                if((entry.getName().startsWith("res/")) &&  ((entry.getName().endsWith(".png") && !entry.getName().endsWith(".9.png")) || entry.getName().endsWith(".jpg") || entry.getName().endsWith(".jpeg"))){
+                    String imageName = entry.getName().substring(entry.getName().lastIndexOf('/')+1 , entry.getName().lastIndexOf('.'));
+                    if( toWebp &&  !baffleConfig.isKeepImage(imageName)){
+                        File newOutfile = new File(outFile.getParentFile() , getName(outFile.getName()));
+                        boolean hasChange = WebpIO.toWebp(outFile, newOutfile , minilevel);
+                        int index = entry.getName().indexOf('.');
+                        if(hasChange){
+                            long crc = 0;
+                            try {
+                                crc = MakeCsc.getFileCRCCode(newOutfile);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                            info = new ZipInfo(entry.getName().substring(0, index)+".webp", entry.getMethod(), newOutfile.length(),
+                                    crc, toHex(md5.digest()));
+                            
+                            webpMapping.put(entry.getName(), entry.getName().substring(0, index)+".webp");
+                        }else{
+                            info = new ZipInfo(entry.getName(), entry.getMethod(), entry.getSize(),
+                                    entry.getCrc(), toHex(md5.digest()));
                         }
-                        info = new ZipInfo(entry.getName().substring(0, index)+".webp", entry.getMethod(), newOutfile.length(),
-                                crc, toHex(md5.digest()));
-                        
-                        webpMapping.put(entry.getName(), entry.getName().substring(0, index)+".webp");
                     }else{
                         info = new ZipInfo(entry.getName(), entry.getMethod(), entry.getSize(),
                                 entry.getCrc(), toHex(md5.digest()));
                     }
+                   
                 }else{
                     info = new ZipInfo(entry.getName(), entry.getMethod(), entry.getSize(),
                             entry.getCrc(), toHex(md5.digest()));

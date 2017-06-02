@@ -40,6 +40,7 @@ public class ConfigReader {
 	private static final String FRAGMENT_START_FLAG = "----";
 
 	private static final String FRAGMENT_KEEP_KEY = "keep_key";
+	private static final String FRAGMENT_KEEP_IMAGE = "keep_image";
 	private static final String FRAGMENT_MAP_KEY = "map_key";
 
 	private static final int STATUS_NULL = 0;
@@ -120,7 +121,17 @@ public class ConfigReader {
                    throw new BaffleException("error keep java Pattern : " + line, e);
                 }
 		    }
-		} else if (FRAGMENT_MAP_KEY.equals(fragmentType)) {
+		} else if (FRAGMENT_KEEP_IMAGE.equals(fragmentType)) {
+            if(qulifiedMapValue(line)){
+                baffleConfig.addKeepImage(line);
+            }else{
+                try {
+                    baffleConfig.addKeepImage(Pattern.compile(line));
+                } catch (PatternSyntaxException e) {
+                   throw new BaffleException("error keep java Pattern : " + line, e);
+                }
+            }
+        } else if (FRAGMENT_MAP_KEY.equals(fragmentType)) {
 			String[] strs = line.split(",");
 			if (strs.length != 2) {
 				throw new BaffleException(
